@@ -2,6 +2,7 @@ import logging
 import os
 import sys
 import time
+from http import HTTPStatus
 
 import requests
 from dotenv import load_dotenv
@@ -48,23 +49,33 @@ def send_message(bot, message):
 
 def get_api_answer(current_timestamp):
     """Получение данных с API Яндекс Практикума."""
-    timestamp = current_timestamp or int(time.time())
-    params = {'from_date': timestamp}
-    response = requests.get(ENDPOINT, headers=HEADERS, params=params)
-    if response.status_code != 200:
-        message_error = 'Ответ API некорректен.'
-        logger.error(message_error)
-        raise StatusError(message_error)
-    return response.json()
+    try:
+        timestamp = current_timestamp or int(time.time())
+        params = {'from_date': timestamp}
+        response = requests.get(ENDPOINT, headers=HEADERS, params=params)
+    except ConnectionError as error:
+        print(error)
+        logger.error(error)
+    else:
+        if response.status_code != HTTPStatus.OK:
+            message_error = 'Ответ API некорректен.'
+            logger.error(message_error)
+            raise StatusError(message_error)
+        try:
+            response = response.json()
+        except requests.JSONDecodeError as error:
+            print(error)
+            logger.error(error)
+        return response
 
 
 def check_response(response):
     """Проверка данных полученных с API."""
-    if type(response) != dict:
+    if type(response) is not dict:
         message_error = 'Response не является словарем.'
         logger.error(message_error)
         raise TypeError(message_error)
-    if type(response.get('homeworks')) != list:
+    if type(response.get('homeworks')) is not list:
         message_error = 'Homeworks не является списком.'
         logger.error(message_error)
         raise TypeError(message_error)
@@ -72,7 +83,7 @@ def check_response(response):
         message_error = 'Ошибка ключа homeworks.'
         logger.error(message_error)
         raise KeyError(message_error)
-    if response.get('homeworks') == []:
+    if len(response.get('homeworks')) == 0:
         message_error = 'Список пуст.'
         logger.error(message_error)
         raise EmptyListError(message_error)
@@ -123,24 +134,24 @@ def main():
         exit()
     bot = Bot(token=TELEGRAM_TOKEN)
     current_timestamp = int(time.time())
-    error_message = True
+    error_message = None
 
     while True:
 
         try:
             response = get_api_answer(current_timestamp)
-            homework = check_response(response)
-            if homework:
-                message = parse_status(homework[0])
+            homeworks = check_response(response)
+            if homeworks:
+                message = parse_status(homeworks[0])
                 time.sleep(RETRY_TIME)
                 logger.info('Сообщение отправлено.')
 
         except Exception as error:
             message = f'Сбой в работе программы: {error}'
-            if error_message:
-                error_message = False
-                logger.error(message)
+            if type(error) is not type(error_message):
                 send_message(bot, message)
+                error_message = error
+            logger.error(message)
             time.sleep(RETRY_TIME)
         else:
             send_message(bot, message)
