@@ -53,9 +53,9 @@ def get_api_answer(current_timestamp):
         timestamp = current_timestamp or int(time.time())
         params = {'from_date': timestamp}
         response = requests.get(ENDPOINT, headers=HEADERS, params=params)
-    except ConnectionError as error:
-        print(error)
+    except requests.exceptions.RequestException as error:
         logger.error(error)
+        raise SystemExit(error)
     else:
         if response.status_code != HTTPStatus.OK:
             message_error = 'Ответ API некорректен.'
@@ -64,8 +64,8 @@ def get_api_answer(current_timestamp):
         try:
             response = response.json()
         except requests.JSONDecodeError as error:
-            print(error)
             logger.error(error)
+            raise error
         return response
 
 
@@ -148,7 +148,7 @@ def main():
 
         except Exception as error:
             message = f'Сбой в работе программы: {error}'
-            if type(error) is not type(error_message):
+            if error_message is None or error.args != error_message.args:
                 send_message(bot, message)
                 error_message = error
             logger.error(message)
