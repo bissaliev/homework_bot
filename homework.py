@@ -123,6 +123,7 @@ def check_tokens():
     if TELEGRAM_CHAT_ID is None:
         logger.critical(f"{message_error} TELEGRAM_CHAT_ID")
         return False
+    return True
 
 
 def main():
