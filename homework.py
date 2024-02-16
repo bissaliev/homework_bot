@@ -57,16 +57,15 @@ def get_api_answer(current_timestamp):
         logger.error(error)
         raise SystemExit(error)
     else:
-        if response.status_code != HTTPStatus.OK:
-            message_error = "Ответ API некорректен."
-            logger.error(message_error)
-            raise StatusError(message_error)
         try:
-            response = response.json()
+            if response.status_code != HTTPStatus.OK:
+                message_error = "Ответ API некорректен."
+                logger.error(message_error)
+                raise StatusError(message_error)
+            return response.json()
         except requests.JSONDecodeError as error:
             logger.error(error)
             raise error
-        return response
 
 
 def check_response(response):
@@ -115,17 +114,15 @@ def parse_status(homework):
 def check_tokens():
     """Проверка на наличие обязательных прерменных окружения."""
     message_error = "Отсутствие обязательных переменных окружения:"
-    tokens = True
     if PRACTICUM_TOKEN is None:
         logger.critical(f"{message_error} PRACTICUM_TOKEN")
-        tokens = False
+        return False
     if TELEGRAM_TOKEN is None:
         logger.critical(f"{message_error} TELEGRAM_TOKEN")
-        tokens = False
+        return False
     if TELEGRAM_CHAT_ID is None:
         logger.critical(f"{message_error} TELEGRAM_CHAT_ID")
-        tokens = False
-    return tokens
+        return False
 
 
 def main():
