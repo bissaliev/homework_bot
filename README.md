@@ -1,5 +1,9 @@
 # homework_bot
-python telegram bot
+![Homework_bot_workflow](https://github.com/bissaliev/homework_bot/actions/workflows/main.yml/badge.svg)
+
+## Технологии
+- python
+- telegram bot
 
 ## Описание
 Проект создан в учебных целях.
