@@ -3,7 +3,7 @@ name: Homework_bot_workflow
 on: [push]
 
 jobs:
-  pep8:
+  test:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v2
@@ -22,3 +22,4 @@ jobs:
     - name: testing PEP8
       run: |
         python -m flake8
+        pytest
